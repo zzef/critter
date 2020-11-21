@@ -17,7 +17,9 @@ Critter is a (very) naive web crawler.
 
 
 `git clone http::/github.com/zef/critter.git`
+
 `g++ -o critter src/main.cpp -lcurl`
+
 `./critter`
 
 There are currently 3 root website nodes:
