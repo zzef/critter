@@ -5,7 +5,7 @@
 #include <curl/curl.h>
 #include <regex>
 #include <queue>
-#include <unordered_map>
+#include <unordered_set>
 #include <fstream>
 
 static size_t wrt(void *contents, size_t size, size_t nmemb, std::string *ptr) {
@@ -38,6 +38,8 @@ static std::string request(std::string url, CURL* curl_ctx) {
 		//list = curl_slist_append(list, "Upgrade-Insecure-Requests: 1");
 		
 		//curl_easy_setopt(curl_ctx, CURLOPT_VERBOSE, 1L);
+		curl_easy_setopt(curl_ctx, CURLOPT_CONNECTTIMEOUT, 20L);
+		curl_easy_setopt(curl_ctx, CURLOPT_TIMEOUT, 20L);
   		curl_easy_setopt(curl_ctx, CURLOPT_HTTPHEADER, list);
 		curl_easy_setopt(curl_ctx, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl_ctx, CURLOPT_WRITEFUNCTION, wrt);
@@ -52,7 +54,7 @@ static std::string request(std::string url, CURL* curl_ctx) {
 
 }
 
-std::unordered_map<std::string,bool> visited;
+std::unordered_set<std::string> visited;
 std::regex url (
 	R"((http[s]?)?://[a-zA-Z0-9\#\-\%\?\=\&\/\_]+(\.[a-zA-Z0-9\#\-\%\?\=\&\/\_]+)*(\.[a-zA-Z0-9\#\%\?\=\&\/\_\-]+)+)",
 	std::regex::extended
@@ -63,16 +65,16 @@ void crawl(std::string root, std::ofstream& file) {
 
 	std::queue<std::string> urls;
 	urls.push(root);
-	visited[root]=true;
+	visited.insert(root);
 	
 	while(!urls.empty()) {
 		
 		CURL* curl = curl_easy_init();
 		std::string response = request(urls.front(), curl);
 		file << urls.front() << std::endl;
-		std::cout << "= site " << urls.front() << " ============================================================" << std::endl;
-		std::cout << response << std::endl;	
-		std::cout << "===================================================================" << std::endl;
+		std::cout << "ws: " << urls.front() << std::endl;
+		//std::cout << response << std::endl;	
+		//std::cout << "\n===================================================================" << std::endl;
 		std::smatch cm;
 		std::smatch cm1;
 	
@@ -84,10 +86,10 @@ void crawl(std::string root, std::ofstream& file) {
 			while(std::regex_search(tmp,cm1,url)) {
 				std::string new_url = cm1[0];
 				std::cout<< "[" << new_url << "]" << std::endl;
-  				std::unordered_map<std::string,bool>::const_iterator got = visited.find(new_url);
+  				std::unordered_set<std::string>::const_iterator got = visited.find(new_url);
 				if (got == visited.end()) {
 					urls.push(new_url);
-					visited[new_url]=true;
+					visited.insert(root);
 				}
 				tmp = cm1.suffix().str();
 			}
@@ -104,7 +106,6 @@ int main(int argc, char *argv[]) {
 
 	std::ofstream file;
 	file.open("visited");
-	
 	crawl("https://www.theguardian.com/uk",file);
 	crawl("https://www.runescape.com",file);
 	crawl("bbc.co.uk",file);
