@@ -52,7 +52,7 @@ static std::string request(std::string url, CURL* curl_ctx) {
 		curl_easy_setopt(curl_ctx, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl_ctx, CURLOPT_WRITEFUNCTION, wrt);
 		curl_easy_setopt(curl_ctx, CURLOPT_WRITEDATA, &response);
-        curl_easy_setopt(curl_ctx, CURLOPT_FOLLOWLOCATION, 1L);
+		curl_easy_setopt(curl_ctx, CURLOPT_FOLLOWLOCATION, 1L);
 		CURLcode res = curl_easy_perform(curl_ctx);
 		curl_easy_cleanup(curl_ctx);
 
