@@ -8,6 +8,14 @@
 #include <unordered_set>
 #include <fstream>
 
+std::unordered_set<std::string> visited;
+std::regex url (
+	R"((http[s]?)?://[a-zA-Z0-9\#\-\%\?\=\&\/\_]+(\.[a-zA-Z0-9\#\-\%\?\=\&\/\_]+)*(\.[a-zA-Z0-9\#\%\?\=\&\/\_\-]+)+)",
+	std::regex::extended
+);
+std::regex href("<\\s*a href\\s*=\\s*[^ ]*");
+
+
 static size_t wrt(void *contents, size_t size, size_t nmemb, std::string *ptr) {
 	
 	char *data = (char*) contents;
@@ -53,13 +61,6 @@ static std::string request(std::string url, CURL* curl_ctx) {
 	return response;
 
 }
-
-std::unordered_set<std::string> visited;
-std::regex url (
-	R"((http[s]?)?://[a-zA-Z0-9\#\-\%\?\=\&\/\_]+(\.[a-zA-Z0-9\#\-\%\?\=\&\/\_]+)*(\.[a-zA-Z0-9\#\%\?\=\&\/\_\-]+)+)",
-	std::regex::extended
-);
-std::regex href("<\\s*a href\\s*=\\s*[^ ]*");
 
 void crawl(std::string root, std::ofstream& file) {
 
