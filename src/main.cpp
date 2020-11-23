@@ -13,10 +13,6 @@ int main( int argc, char *argv[] ) {
 	crawler.crawl( "https://www.runescape.com", file );
 	crawler.crawl( "bbc.co.uk", file );
 
-	// crawl("https://www.theguardian.com/uk",file);
-	// crawl("https://www.runescape.com",file);
-	// crawl("bbc.co.uk",file);
-
 	file.close();
 	
 	crawler.cleanup();
