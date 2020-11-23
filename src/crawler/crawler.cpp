@@ -49,10 +49,11 @@ std::string Crawler::request( std::string url, CURL* curl_ctx ) {
 
 void Crawler::discover_url( std::queue<std::string>& url_queue, std::string new_url ) {
 	
-	std::unordered_set<std::string>::const_iterator visited_checker = visited_urls.find( new_url );
-	if ( visited_checker == visited_urls.end() ) {
+	std::unordered_set<std::string>::const_iterator visited_checker = this->visited_urls.find( new_url );
+	if ( visited_checker == this->visited_urls.end() ) {
 		std::cout<< "[" << new_url << "]" << std::endl;
 		url_queue.push( new_url );
+		this->visited_urls.insert( new_url );
 	}
 }
 
@@ -61,7 +62,7 @@ void Crawler::crawl( std::string root, std::ofstream& file ) {
 	std::queue<std::string> url_queue;
 
 
-	Crawler::visited_urls.insert( root );
+	this->visited_urls.insert( root );
 	url_queue.push( root );
 	
 	while( !url_queue.empty() ) {
@@ -76,16 +77,16 @@ void Crawler::crawl( std::string root, std::ofstream& file ) {
 		std::string curr_href;
 
 		// Loop through all href tags in the requested page
-		while (std::regex_search( response, href_match, href ) ) {	
+		while (std::regex_search( response, href_match, this->href ) ) {	
 			curr_href = href_match[0];
 
 			// Search for the url in the href
-			std::regex_search( curr_href, url_match, url );
+			std::regex_search( curr_href, url_match, this->url );
 
 			// Add the url to the list of unexplored URL's if not already explored
 			if( url_match.ready() ) {
 				std::string new_url = url_match[0];
-				Crawler::discover_url( url_queue, new_url );
+				this->discover_url( url_queue, new_url );
 			}
 
 			response = href_match.suffix().str();
