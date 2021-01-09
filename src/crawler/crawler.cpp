@@ -1,19 +1,31 @@
 #include "crawler.h"
 #include <fstream>
 
-size_t Crawler::wrt( void *contents, size_t size, size_t nmemb, std::string *ptr ) {
-	
-	char *data = ( char* ) contents;
-	size_t real_size = size * nmemb;
-	*ptr += std::string( data ); //This may cause problems if string has \0
+size_t Crawler::wrt( void *data, size_t size, size_t nmemb, void *userp ) {
 
-	return real_size;
+   std::cout << "loading data" << std::endl;
+	
+   size_t realsize = size * nmemb;
+   struct memory *mem = (struct memory *)userp;
+ 
+   char *ptr = (char*) realloc(mem->response, mem->size + realsize + 1);
+   if(ptr == NULL)
+     return 0;  /* out of memory! */
+ 
+   mem->response = ptr;
+   memcpy(&(mem->response[mem->size]), data, realsize);
+   mem->size += realsize;
+   mem->response[mem->size] = 0;
+
+
+   return realsize;
 }
 
-std::string Crawler::request( std::string url, CURL* curl_ctx ) {
+struct memory Crawler::request( std::string url, CURL* curl_ctx ) {
 
-	std::string response = "";
-
+	struct memory chunk;
+	chunk.response = (char*) malloc(1);
+	chunk.size = 0;
 	struct curl_slist *list = NULL; 
 
 	//std::string host = "Host: ";
@@ -36,14 +48,14 @@ std::string Crawler::request( std::string url, CURL* curl_ctx ) {
   		curl_easy_setopt( curl_ctx, CURLOPT_HTTPHEADER, list );
 		curl_easy_setopt( curl_ctx, CURLOPT_URL, url.c_str(  ) );
 		curl_easy_setopt( curl_ctx, CURLOPT_WRITEFUNCTION, wrt );
-		curl_easy_setopt( curl_ctx, CURLOPT_WRITEDATA, &response );
+		curl_easy_setopt( curl_ctx, CURLOPT_WRITEDATA, (void*)&chunk );
 		curl_easy_setopt( curl_ctx, CURLOPT_FOLLOWLOCATION, 1L );
 		CURLcode res = curl_easy_perform( curl_ctx );
 		curl_easy_cleanup( curl_ctx );
 
 		curl_slist_free_all( list );
 	}
-	return response;
+	return chunk;
 
 }
 
@@ -53,6 +65,7 @@ void Crawler::discover_url( std::queue<std::string>& url_queue, std::string new_
 	if ( visited_checker == visited_urls.end() ) {
 		std::cout<< "[" << new_url << "]" << std::endl;
 		url_queue.push( new_url );
+		visited_urls.insert(new_url);
 	}
 }
 
@@ -67,9 +80,16 @@ void Crawler::crawl( std::string root, std::ofstream& file ) {
 	while( !url_queue.empty() ) {
 		
 		CURL* curl = curl_easy_init();
-		std::string response = request( url_queue.front(), curl );
-		file << url_queue.front() << std::endl;
 		std::cout << "ws: " << url_queue.front() << std::endl;
+		struct memory m = request(url_queue.front(),curl);
+		std::cout << m.size << std::endl;
+		std::cout << (char*) m.response << std::endl;
+		std::cout << "copying: " << url_queue.front() << std::endl;
+		std::string response = std::string(m.response);
+
+		std::cout << "downloading: " << url_queue.front() << std::endl;
+		file << url_queue.front() << std::endl;
+		std::cout << "submitted: " << url_queue.front() << std::endl;
 
 		std::smatch href_match;
 		std::smatch url_match;
@@ -78,6 +98,7 @@ void Crawler::crawl( std::string root, std::ofstream& file ) {
 		// Loop through all href tags in the requested page
 		while (std::regex_search( response, href_match, href ) ) {	
 			curr_href = href_match[0];
+			//std::cout << curr_href << std::endl;
 
 			// Search for the url in the href
 			std::regex_search( curr_href, url_match, url );
@@ -92,6 +113,7 @@ void Crawler::crawl( std::string root, std::ofstream& file ) {
 		}
 	
 		url_queue.pop();
+
 	}
 }
 

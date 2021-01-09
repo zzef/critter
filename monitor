@@ -1,0 +1,4 @@
+#!/bin/bash
+
+while [ 1 ];  do clear;  wc -l visited_urls ; ps -p $(pidof critter) -o etime; echo unique urls $(cat visited_urls | sort | uniq | wc -l); echo memory usage $(cat /proc/$(pidof critter)/smaps | grep -i pss |  awk '{Total+=$2} END {print Total" B"}'); sleep 1; done
+
